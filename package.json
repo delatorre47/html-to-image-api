@@ -1,0 +1,12 @@
+{
+  "name": "html-to-image-api",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "express": "^4.19.2",
+    "playwright-core": "^1.45.0"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
