@@ -7,8 +7,8 @@ import { FormData, Blob } from "formdata-node";
 const app = express();
 app.use(express.json({ limit: "10mb" }));
 
-// Configura tu Cloudinary
-const CLOUD_NAME = "da25a8gze";      // ← tu Cloudinary cloud name
+// Configura Cloudinary
+const CLOUD_NAME = "da25a8gze";      // ← tu Cloudinary Cloud Name
 const UPLOAD_PRESET = "unsigned";    // ← tu upload preset sin firma
 
 app.post("/", async (req, res) => {
@@ -16,28 +16,29 @@ app.post("/", async (req, res) => {
     const { html } = req.body;
     if (!html) return res.status(400).json({ error: "Missing HTML input" });
 
-    let executablePath = await chromium.executablePath;
-
-    // Fallback local (útil si Vercel no encuentra el binario)
-    if (!executablePath) {
-      const puppeteerPkg = await import("puppeteer");
-      executablePath = puppeteerPkg.default.executablePath();
-    }
+    // Intentamos usar el binario de chrome-aws-lambda (válido en Vercel)
+    const executablePath = await chromium.executablePath;
 
     const browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
-      executablePath,
-      headless: chromium.headless,
+      executablePath: executablePath || "/usr/bin/chromium-browser", // fallback
+      headless: true,
     });
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
 
-    const buffer = await page.screenshot({ type: "png", fullPage: true });
+    // Screenshot 1080x1920 (TikTok size)
+    const buffer = await page.screenshot({
+      type: "png",
+      fullPage: false,
+      clip: { x: 0, y: 0, width: 1080, height: 1920 },
+    });
+
     await browser.close();
 
-    // Subida automática a Cloudinary
+    // Subida a Cloudinary
     const formData = new FormData();
     formData.append("file", new Blob([buffer], { type: "image/png" }));
     formData.append("upload_preset", UPLOAD_PRESET);
