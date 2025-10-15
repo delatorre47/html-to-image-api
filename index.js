@@ -7,17 +7,23 @@ import { FormData, Blob } from "formdata-node";
 const app = express();
 app.use(express.json({ limit: "10mb" }));
 
-// Configura Cloudinary
-const CLOUD_NAME = "da25a8gze";   // ← tu cloud name
-const UPLOAD_PRESET = "unsigned"; // ← tu upload preset sin firma
+// Configura tu Cloudinary
+const CLOUD_NAME = "da25a8gze";      // ← tu Cloudinary cloud name
+const UPLOAD_PRESET = "unsigned";    // ← tu upload preset sin firma
 
 app.post("/", async (req, res) => {
   try {
     const { html } = req.body;
     if (!html) return res.status(400).json({ error: "Missing HTML input" });
 
-    // Lanzar navegador compatible con Vercel
-    const executablePath = await chromium.executablePath;
+    let executablePath = await chromium.executablePath;
+
+    // Fallback local (útil si Vercel no encuentra el binario)
+    if (!executablePath) {
+      const puppeteerPkg = await import("puppeteer");
+      executablePath = puppeteerPkg.default.executablePath();
+    }
+
     const browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
@@ -27,10 +33,11 @@ app.post("/", async (req, res) => {
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
+
     const buffer = await page.screenshot({ type: "png", fullPage: true });
     await browser.close();
 
-    // Subir a Cloudinary
+    // Subida automática a Cloudinary
     const formData = new FormData();
     formData.append("file", new Blob([buffer], { type: "image/png" }));
     formData.append("upload_preset", UPLOAD_PRESET);
@@ -53,3 +60,4 @@ app.post("/", async (req, res) => {
 
 app.listen(3000, () => console.log("✅ Server running"));
 export default app;
+
