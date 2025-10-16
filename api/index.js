@@ -1,4 +1,4 @@
-import chromium from "chrome-aws-lambda";
+import chromium from "@sparticuz/chromium";
 import puppeteer from "puppeteer-core";
 import fetch from "node-fetch";
 import { FormData, Blob } from "formdata-node";
@@ -15,13 +15,13 @@ export default async function handler(req, res) {
     const { html } = req.body;
     if (!html) return res.status(400).json({ error: "Missing HTML input" });
 
-    const executablePath = await chromium.executablePath;
+    const executablePath = await chromium.executablePath();
 
     const browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: { width: 1080, height: 1920 },
       executablePath,
-      headless: true,
+      headless: chromium.headless,
     });
 
     const page = await browser.newPage();
@@ -55,4 +55,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: err.message });
   }
 }
-
