@@ -8,7 +8,6 @@ const UPLOAD_PRESET = "unsigned";    // ← tu upload preset sin firma
 
 export default async function handler(req, res) {
   try {
-    // Aceptar tanto POST como GET (por si lo pruebas desde navegador)
     if (req.method !== "POST") {
       return res.status(200).send("✅ API lista. Usa POST con JSON { html }");
     }
@@ -47,7 +46,6 @@ export default async function handler(req, res) {
     );
 
     const result = await upload.json();
-
     if (!result.secure_url)
       throw new Error(result.error?.message || "Upload failed");
 
@@ -57,3 +55,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: err.message });
   }
 }
+
