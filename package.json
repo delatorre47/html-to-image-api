@@ -1,11 +1,6 @@
 {
-  "name": "html-to-image-api",
-  "version": "1.0.0",
-  "type": "module",
   "dependencies": {
     "chrome-aws-lambda": "^10.1.0",
-    "puppeteer-core": "^10.1.0",
-    "node-fetch": "^3.3.2",
-    "formdata-node": "^6.0.3"
+    "puppeteer-core": "^21.0.0"
   }
 }
