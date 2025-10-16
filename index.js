@@ -1,35 +1,33 @@
-import express from "express";
 import chromium from "chrome-aws-lambda";
 import puppeteer from "puppeteer-core";
 import fetch from "node-fetch";
 import { FormData, Blob } from "formdata-node";
 
-const app = express();
-app.use(express.json({ limit: "10mb" }));
-
-// Configura Cloudinary
 const CLOUD_NAME = "da25a8gze";      // ← tu Cloudinary Cloud Name
 const UPLOAD_PRESET = "unsigned";    // ← tu upload preset sin firma
 
-app.post("/", async (req, res) => {
+export default async function handler(req, res) {
   try {
+    // Aceptar tanto POST como GET (por si lo pruebas desde navegador)
+    if (req.method !== "POST") {
+      return res.status(200).send("✅ API lista. Usa POST con JSON { html }");
+    }
+
     const { html } = req.body;
     if (!html) return res.status(400).json({ error: "Missing HTML input" });
 
-    // Intentamos usar el binario de chrome-aws-lambda (válido en Vercel)
     const executablePath = await chromium.executablePath;
 
     const browser = await puppeteer.launch({
       args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: executablePath || "/usr/bin/chromium-browser", // fallback
+      defaultViewport: { width: 1080, height: 1920 },
+      executablePath,
       headless: true,
     });
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
 
-    // Screenshot 1080x1920 (TikTok size)
     const buffer = await page.screenshot({
       type: "png",
       fullPage: false,
@@ -50,15 +48,12 @@ app.post("/", async (req, res) => {
 
     const result = await upload.json();
 
-    if (!result.secure_url) throw new Error(result.error?.message || "Upload failed");
+    if (!result.secure_url)
+      throw new Error(result.error?.message || "Upload failed");
 
-    return res.json({ url: result.secure_url });
+    return res.status(200).json({ url: result.secure_url });
   } catch (err) {
     console.error("❌ Error:", err);
     return res.status(500).json({ error: err.message });
   }
-});
-
-app.listen(3000, () => console.log("✅ Server running"));
-export default app;
-
+}
